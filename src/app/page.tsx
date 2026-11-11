@@ -374,7 +374,7 @@ export default async function HomePage() {
                       <MapPin className="w-4 h-4" />
                     </span>
                     <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-2 py-0.5 rounded-md">
-                      {city._count.properties} {city._count.properties === 1 ? 'Listing' : 'Listings'}
+                      {city._count?.properties ?? 0} {(city._count?.properties ?? 0) === 1 ? 'Listing' : 'Listings'}
                     </span>
                   </div>
                   <h3 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-red-600 transition-colors">

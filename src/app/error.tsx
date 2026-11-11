@@ -24,9 +24,16 @@ export default function ErrorBoundary({
         <h2 className="text-xl font-bold text-slate-900 mb-2">
           Maa Kalkaji Properties
         </h2>
-        <p className="text-sm text-slate-600 mb-6">
+        <p className="text-sm text-slate-600 mb-4">
           We encountered an issue loading this page. Please try reloading or visit our homepage.
         </p>
+
+        {error?.message && (
+          <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-xl text-left">
+            <p className="text-[11px] font-bold text-red-700 uppercase mb-1">Diagnostic Details:</p>
+            <p className="text-xs font-mono text-red-600 break-all">{error.message}</p>
+          </div>
+        )}
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <button

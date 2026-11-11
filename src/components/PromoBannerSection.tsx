@@ -64,7 +64,11 @@ export default function PromoBannerSection({ banners = PROMO_BANNERS }: PromoBan
 
   if (!banners || banners.length === 0) return null;
 
-  const currentBanner = banners[currentIndex];
+  const currentBanner = banners[currentIndex] as any;
+  const desktopImg = currentBanner.imageUrlDesktop || currentBanner.desktopImage || '/banners/diwali-banner-desktop.png';
+  const mobileImg = currentBanner.imageUrlMobile || currentBanner.mobileImage || desktopImg;
+  const bannerLink = currentBanner.targetUrl || currentBanner.link || '/residential-property';
+  const bannerAlt = currentBanner.title || currentBanner.alt || 'Maa Kalkaji Properties Special Offer';
 
   return (
     <section className="w-full bg-slate-50/70 py-3 sm:py-5 border-b border-slate-200/80">
@@ -77,14 +81,14 @@ export default function PromoBannerSection({ banners = PROMO_BANNERS }: PromoBan
         >
           {/* Clickable Banner Link */}
           <Link
-            href={currentBanner.link || '/residential-property'}
+            href={bannerLink}
             className="block relative w-full select-none cursor-pointer overflow-hidden"
           >
             {/* 1. Desktop Banner (1024 x 341 - 3:1 Ratio) */}
             <div className="hidden sm:block w-full aspect-[3/1]">
               <img
-                src={currentBanner.desktopImage}
-                alt={currentBanner.alt}
+                src={desktopImg}
+                alt={bannerAlt}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.01]"
                 loading="eager"
               />
@@ -93,8 +97,8 @@ export default function PromoBannerSection({ banners = PROMO_BANNERS }: PromoBan
             {/* 2. Mobile Banner (1024 x 682 - 3:2 Ratio) */}
             <div className="block sm:hidden w-full aspect-[3/2]">
               <img
-                src={currentBanner.mobileImage}
-                alt={currentBanner.alt}
+                src={mobileImg}
+                alt={bannerAlt}
                 className="w-full h-full object-cover active:scale-[0.99] transition-transform duration-200"
                 loading="eager"
               />

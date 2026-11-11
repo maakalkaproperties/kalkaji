@@ -68,7 +68,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
         {/* Top Badges (BatteryMantra Crimson accent) */}
         <div className="absolute top-2.5 left-2.5 flex flex-wrap items-center gap-1.5 z-10">
           <span className="px-2 py-0.5 rounded-md bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider shadow-sm">
-            {property.category.name}
+            {property.category?.name || 'Property'}
           </span>
           {property.featuredStatus && (
             <span className="px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 text-[10px] font-black uppercase tracking-wider shadow-sm">
@@ -111,7 +111,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
           <div className="flex items-center gap-1 text-slate-500 text-xs">
             <MapPin className="w-3.5 h-3.5 text-red-600 shrink-0" />
             <span className="truncate font-medium">
-              {property.locality?.name && property.locality?.slug ? (
+              {property.locality?.name && property.locality?.slug && property.city?.slug ? (
                 <Link
                   href={`/locations/${property.city.slug}/${property.locality.slug}`}
                   className="hover:text-red-600 hover:underline"
@@ -121,13 +121,17 @@ export default function PropertyCard({ property }: PropertyCardProps) {
               ) : property.locality?.name ? (
                 property.locality.name
               ) : null}
-              {property.locality?.name ? ', ' : ''}
-              <Link
-                href={`/locations/${property.city.slug}`}
-                className="hover:text-red-600 hover:underline"
-              >
-                {property.city.name}
-              </Link>
+              {property.locality?.name && property.city?.name ? ', ' : ''}
+              {property.city?.slug ? (
+                <Link
+                  href={`/locations/${property.city.slug}`}
+                  className="hover:text-red-600 hover:underline"
+                >
+                  {property.city.name}
+                </Link>
+              ) : (
+                property.city?.name || 'Delhi NCR'
+              )}
             </span>
           </div>
 
