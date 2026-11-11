@@ -1,0 +1,315 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id           String        @id @default(cuid())
+  name         String
+  email        String        @unique
+  passwordHash String
+  role         String        @default("SALES_EXECUTIVE") // SUPER_ADMIN, ADMIN, PROPERTY_MANAGER, SALES_EXECUTIVE, CONTENT_EDITOR
+  phone        String?
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  leads        Lead[]        @relation("AssignedLeads")
+  activities   LeadActivity[]
+  auditLogs    AuditLog[]
+}
+
+model Category {
+  id           String     @id @default(cuid())
+  name         String     @unique // Residential, Commercial, Plots, Farmhouse
+  slug         String     @unique // residential-property, commercial-property, plots-for-sale, farmhouse-for-sale
+  description  String?
+  displayOrder Int        @default(0)
+  properties   Property[]
+  leads        Lead[]
+  createdAt    DateTime   @default(now())
+}
+
+model City {
+  id             String     @id @default(cuid())
+  name           String     @unique // Noida, Greater Noida, Gurugram, Delhi, Ghaziabad, Faridabad
+  slug           String     @unique // noida, greater-noida, gurugram, delhi, ghaziabad, faridabad
+  state          String     @default("Delhi NCR")
+  heading        String?
+  tagline        String?
+  description    String?
+  isFeatured     Boolean    @default(false)
+  displayOrder   Int        @default(0)
+  seoTitle       String?
+  seoDescription String?
+  localities     Locality[]
+  properties     Property[]
+  leads          Lead[]
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+model Locality {
+  id             String     @id @default(cuid())
+  cityId         String
+  city           City       @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  name           String     // e.g. Sector 150, Golf Course Ext Road, Indirapuram
+  slug           String
+  heading        String?    // Custom H1 Heading for the area/sector page
+  subheading     String?    // Subtitle / micro badge
+  pincode        String?
+  description    String?    // Detailed description / overview of this area/sector
+  displayOrder   Int        @default(0)
+  seoTitle       String?
+  seoDescription String?
+  properties     Property[]
+  createdAt      DateTime   @default(now())
+
+  @@unique([cityId, slug])
+}
+
+model Builder {
+  id           String     @id @default(cuid())
+  name         String     @unique
+  slug         String     @unique
+  description  String?
+  logoUrl      String?
+  website      String?
+  reraNo       String?
+  properties   Property[]
+  createdAt    DateTime   @default(now())
+}
+
+model Property {
+  id                 String            @id @default(cuid())
+  title              String
+  slug               String            @unique
+  description        String
+  shortDescription   String?
+  price              Float             // numeric value in INR for sorting & filtering
+  priceDisplay       String            // Formatted e.g. "₹ 1.85 Cr" or "₹ 85,000/mo"
+  categoryId         String
+  category           Category          @relation(fields: [categoryId], references: [id])
+  purpose            String            @default("SALE") // SALE, RENT
+  propertyType       String            // APARTMENT, VILLA, PENTHOUSE, OFFICE_SPACE, RETAIL_SHOP, RESIDENTIAL_PLOT, COMMERCIAL_LAND, LUXURY_FARMHOUSE
+  bedrooms           Int?              // 1, 2, 3, 4, 5+ (for residential)
+  bathrooms          Int?
+  balconies          Int?
+  carpetArea         Float?            // numeric
+  superArea          Float?            // numeric
+  areaUnit           String            @default("SQ_FT") // SQ_FT, SQ_YD, ACRE
+  furnishing         String?           @default("UNFURNISHED") // UNFURNISHED, SEMI_FURNISHED, FULLY_FURNISHED
+  possessionStatus   String?           @default("READY_TO_MOVE") // READY_TO_MOVE, UNDER_CONSTRUCTION, NEW_LAUNCH
+  possessionDate     String?
+  reraId             String?
+  verifiedStatus     Boolean           @default(true)
+  featuredStatus     Boolean           @default(false)
+  availabilityStatus String            @default("AVAILABLE") // AVAILABLE, UNDER_OFFER, SOLD, RENTED
+  address            String
+  localityId         String?
+  locality           Locality?         @relation(fields: [localityId], references: [id])
+  cityId             String
+  city               City              @relation(fields: [cityId], references: [id])
+  latitude           Float?
+  longitude          Float?
+  pinCode            String?
+  builderId          String?
+  builder            Builder?          @relation(fields: [builderId], references: [id])
+  projectName        String?
+  
+  // Technical SEO & Discoverability
+  seoTitle           String?
+  seoDescription     String?
+  canonicalUrl       String?
+  isIndexable        Boolean           @default(true)
+  published          Boolean           @default(true)
+  viewCount          Int               @default(0)
+  faqs               Json?             // Array of { question: string, answer: string }
+
+  images             PropertyImage[]
+  amenities          PropertyAmenity[]
+  leads              Lead[]
+  siteVisits         SiteVisit[]
+
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+}
+
+model PropertyImage {
+  id           String   @id @default(cuid())
+  propertyId   String
+  property     Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  url          String
+  alt          String
+  caption      String?
+  isFeatured   Boolean  @default(false)
+  displayOrder Int      @default(0)
+  imageType    String   @default("GALLERY") // GALLERY, FLOOR_PLAN, MASTER_PLAN, LOCATION_MAP
+  createdAt    DateTime @default(now())
+}
+
+model Amenity {
+  id         String            @id @default(cuid())
+  name       String            @unique
+  slug       String            @unique
+  icon       String?           // Lucide icon name, e.g. "ShieldCheck", "Car", "Waves"
+  category   String            @default("GENERAL") // GENERAL, CONVENIENCE, LEISURE, SAFETY, ENVIRONMENT
+  properties PropertyAmenity[]
+}
+
+model PropertyAmenity {
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  amenityId  String
+  amenity    Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
+  @@id([propertyId, amenityId])
+}
+
+model Lead {
+  id             String         @id @default(cuid())
+  leadNumber     String         @unique // e.g. "GR-2026-0001"
+  name           String
+  phone          String
+  email          String?
+  propertyId     String?
+  property       Property?      @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  categoryId     String?
+  category       Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  cityId         String?
+  city           City?          @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  preferredArea  String?
+  budget         String?
+  message        String?
+  leadSource     String         @default("PROPERTY_ENQUIRY") // PROPERTY_ENQUIRY, WHATSAPP, CALLBACK_REQUEST, SITE_VISIT_FORM, DIRECT_CALL, CONTACT_PAGE
+  landingPage    String?
+  assignedUserId String?
+  assignedUser   User?          @relation("AssignedLeads", fields: [assignedUserId], references: [id], onDelete: SetNull)
+  status         String         @default("NEW") // NEW, CONTACTED, QUALIFIED, SITE_VISIT_SCHEDULED, NEGOTIATION, CONVERTED, LOST
+  followUpDate   DateTime?
+  notes          String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  activities     LeadActivity[]
+  siteVisits     SiteVisit[]
+}
+
+model LeadActivity {
+  id                String   @id @default(cuid())
+  leadId            String
+  lead              Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  action            String   // STATUS_CHANGED, NOTE_ADDED, CALL_LOGGED, VISIT_SCHEDULED, ASSIGNED
+  details           String
+  performedByUserId String?
+  performedByUser   User?    @relation(fields: [performedByUserId], references: [id], onDelete: SetNull)
+  createdAt         DateTime @default(now())
+}
+
+model SiteVisit {
+  id            String    @id @default(cuid())
+  leadId        String?
+  lead          Lead?     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  propertyId    String
+  property      Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  scheduledDate DateTime
+  timeSlot      String    // e.g. "11:00 AM - 12:00 PM"
+  visitorName   String
+  visitorPhone  String
+  visitorEmail  String?
+  status        String    @default("REQUESTED") // REQUESTED, CONFIRMED, COMPLETED, CANCELLED
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Blog {
+  id               String    @id @default(cuid())
+  title            String
+  slug             String    @unique
+  excerpt          String
+  content          String
+  featuredImageUrl String?
+  imageAlt         String?
+  authorName       String    @default("NCR Property Research Desk")
+  category         String    @default("BUYER_GUIDE") // BUYER_GUIDE, LEGAL_ADVICE, MARKET_TRENDS, INFRASTRUCTURE_UPDATE
+  tags             String?
+  isPublished      Boolean   @default(true)
+  seoTitle         String?
+  seoDescription   String?
+  canonicalUrl     String?
+  publishedAt      DateTime  @default(now())
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model Testimonial {
+  id               String   @id @default(cuid())
+  clientName       String
+  clientRole       String?  // e.g. "Investor, Gurugram" or "Homebuyer, Sector 150 Noida"
+  rating           Int      @default(5)
+  quote            String
+  propertyLocation String?
+  isApproved       Boolean  @default(true)
+  displayOrder     Int      @default(0)
+  createdAt        DateTime @default(now())
+}
+
+model SeoMetadata {
+  id             String   @id @default(cuid())
+  pagePath       String   @unique // e.g. "/", "/about", "/contact"
+  seoTitle       String
+  seoDescription String
+  ogImage        String?
+  canonicalUrl   String?
+  isIndexable    Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Redirect {
+  id         String   @id @default(cuid())
+  sourcePath String   @unique // e.g. "/property/old-slug"
+  targetPath String   // e.g. "/property/new-slug"
+  statusCode Int      @default(301)
+  createdAt  DateTime @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String   // CREATE, UPDATE, DELETE, LOGIN, EXPORT
+  entity     String   // PROPERTY, LEAD, BLOG, USER
+  entityId   String?
+  details    String?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+}
+
+model Banner {
+  id           String   @id @default(cuid())
+  title        String?
+  desktopImage String   // Desktop banner URL (1024 x 341 or 3:1)
+  mobileImage  String   // Mobile banner URL (1024 x 682 or 3:2)
+  link         String   @default("/residential-property")
+  alt          String   @default("Promotional Banner")
+  isActive     Boolean  @default(true)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Faq {
+  id           String   @id @default(cuid())
+  question     String
+  answer       String
+  category     String?  @default("GENERAL") // GENERAL, BUYING, INVESTMENT, RERA, HOME_LOANS
+  displayOrder Int      @default(0)
+  isPublished  Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
