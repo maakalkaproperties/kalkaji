@@ -7,8 +7,21 @@ import StructuredData from '@/components/StructuredData';
 
 export const dynamic = 'force-dynamic';
 
+function getMetadataBase(): URL {
+  const raw =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '') ||
+    'http://localhost:3000';
+  const clean = raw.startsWith('http://') || raw.startsWith('https://') ? raw : `https://${raw}`;
+  try {
+    return new URL(clean);
+  } catch {
+    return new URL('http://localhost:3000');
+  }
+}
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  metadataBase: getMetadataBase(),
   title: {
     default: 'Maa Kalkaji Properties | Premium Delhi NCR Real Estate Agency',
     template: '%s | Maa Kalkaji Properties',
