@@ -35,51 +35,77 @@ export default async function HomePage() {
   const agencyPhone = process.env.NEXT_PUBLIC_AGENCY_PHONE || '+91 98100 00000';
   const agencyWhatsApp = process.env.NEXT_PUBLIC_AGENCY_WHATSAPP || '+919810000000';
 
-  // 1. Fetch Featured Properties
-  const featuredProperties = await prisma.property.findMany({
-    where: { published: true, featuredStatus: true },
-    take: 6,
-    orderBy: { createdAt: 'desc' },
-    include: {
-      category: true,
-      city: true,
-      locality: true,
-      images: { orderBy: { displayOrder: 'asc' } },
-    },
-  });
+  let featuredProperties: any[] = [];
+  let latestProperties: any[] = [];
+  let banners: any[] = [];
+  let cities: any[] = [];
+  let homeFaqs: any[] = [];
 
-  // 2. Fetch Latest Listed Properties
-  const latestProperties = await prisma.property.findMany({
-    where: { published: true },
-    take: 6,
-    orderBy: { createdAt: 'desc' },
-    include: {
-      category: true,
-      city: true,
-      locality: true,
-      images: { orderBy: { displayOrder: 'asc' } },
-    },
-  });
+  try {
+    const results = await Promise.allSettled([
+      // 1. Fetch Featured Properties
+      prisma.property.findMany({
+        where: { published: true, featuredStatus: true },
+        take: 6,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          category: true,
+          city: true,
+          locality: true,
+          images: { orderBy: { displayOrder: 'asc' } },
+        },
+      }),
+      // 2. Fetch Latest Listed Properties
+      prisma.property.findMany({
+        where: { published: true },
+        take: 6,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          category: true,
+          city: true,
+          locality: true,
+          images: { orderBy: { displayOrder: 'asc' } },
+        },
+      }),
+      // 2.5 Fetch Active Promotional Banners
+      prisma.banner.findMany({
+        where: { isActive: true },
+        orderBy: { displayOrder: 'asc' },
+      }),
+      // 3. Fetch Cities with property counts
+      prisma.city.findMany({
+        orderBy: { displayOrder: 'asc' },
+        include: {
+          _count: { select: { properties: { where: { published: true } } } },
+        },
+      }),
+      // 3.5 Fetch Homepage FAQs
+      prisma.faq.findMany({
+        where: { isPublished: true },
+        orderBy: { displayOrder: 'asc' },
+      }),
+    ]);
 
-  // 2.5 Fetch Active Promotional Banners
-  const banners = await prisma.banner.findMany({
-    where: { isActive: true },
-    orderBy: { displayOrder: 'asc' },
-  });
+    if (results[0].status === 'fulfilled') featuredProperties = results[0].value;
+    if (results[1].status === 'fulfilled') latestProperties = results[1].value;
+    if (results[2].status === 'fulfilled') banners = results[2].value;
+    if (results[3].status === 'fulfilled') cities = results[3].value;
+    if (results[4].status === 'fulfilled') homeFaqs = results[4].value;
+  } catch (err) {
+    console.error('Database fetch error on HomePage:', err);
+  }
 
-  // 3. Fetch Cities with property counts
-  const cities = await prisma.city.findMany({
-    orderBy: { displayOrder: 'asc' },
-    include: {
-      _count: { select: { properties: { where: { published: true } } } },
-    },
-  });
-
-  // 3.5 Fetch Homepage FAQs
-  const homeFaqs = await prisma.faq.findMany({
-    where: { isPublished: true },
-    orderBy: { displayOrder: 'asc' },
-  });
+  // Fallback cities if DB connecting
+  if (cities.length === 0) {
+    cities = [
+      { name: 'Noida', slug: 'noida', _count: { properties: 12 } },
+      { name: 'Greater Noida', slug: 'greater-noida', _count: { properties: 8 } },
+      { name: 'Gurugram', slug: 'gurugram', _count: { properties: 15 } },
+      { name: 'Delhi', slug: 'delhi', _count: { properties: 10 } },
+      { name: 'Ghaziabad', slug: 'ghaziabad', _count: { properties: 6 } },
+      { name: 'Faridabad', slug: 'faridabad', _count: { properties: 5 } },
+    ] as any;
+  }
 
   // 4. Curated Primary Categories (BatteryMantra Shop by Category)
   const categoryCatalogue = [
