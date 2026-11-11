@@ -42,7 +42,7 @@ export default async function HomePage() {
   let homeFaqs: any[] = [];
 
   try {
-    const results = await Promise.allSettled([
+    const fetchDB = Promise.allSettled([
       // 1. Fetch Featured Properties
       prisma.property.findMany({
         where: { published: true, featuredStatus: true },
@@ -86,13 +86,19 @@ export default async function HomePage() {
       }),
     ]);
 
-    if (results[0].status === 'fulfilled') featuredProperties = results[0].value;
-    if (results[1].status === 'fulfilled') latestProperties = results[1].value;
-    if (results[2].status === 'fulfilled') banners = results[2].value;
-    if (results[3].status === 'fulfilled') cities = results[3].value;
-    if (results[4].status === 'fulfilled') homeFaqs = results[4].value;
+    const timeout = new Promise<any[]>((_, reject) =>
+      setTimeout(() => reject(new Error('DB Timeout')), 3500)
+    );
+
+    const results = await Promise.race([fetchDB, timeout]);
+
+    if (results[0]?.status === 'fulfilled') featuredProperties = results[0].value;
+    if (results[1]?.status === 'fulfilled') latestProperties = results[1].value;
+    if (results[2]?.status === 'fulfilled') banners = results[2].value;
+    if (results[3]?.status === 'fulfilled') cities = results[3].value;
+    if (results[4]?.status === 'fulfilled') homeFaqs = results[4].value;
   } catch (err) {
-    console.error('Database fetch error on HomePage:', err);
+    console.warn('Database fetch timed out or failed on HomePage, using fallback:', err);
   }
 
   // Fallback cities if DB connecting

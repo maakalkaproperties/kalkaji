@@ -82,6 +82,10 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport = {
+  themeColor: '#991b1b',
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -89,38 +93,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="h-full scroll-smooth">
-      <head>
-        <meta name="theme-color" content="#991b1b" />
+      <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 font-sans antialiased">
         <StructuredData
           type="RealEstateAgent"
           data={{
-            name: 'Grand Realty NCR',
+            name: 'Maa Kalkaji Properties',
             phone: process.env.NEXT_PUBLIC_AGENCY_PHONE || '+91 98100 00000',
-            email: process.env.NEXT_PUBLIC_AGENCY_EMAIL || 'enquiry@grandrealtyncr.com',
+            email: process.env.NEXT_PUBLIC_AGENCY_EMAIL || 'info@maakalkajiproperties.com',
           }}
         />
-        {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
-          <>
-            <script
-              async
-              src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}`}
-            />
-            <script
-              dangerouslySetInnerHTML={{
-                __html: `
-                  window.dataLayer = window.dataLayer || [];
-                  function gtag(){dataLayer.push(arguments);}
-                  gtag('js', new Date());
-                  gtag('config', '${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}', {
-                    page_path: window.location.pathname,
-                  });
-                `,
-              }}
-            />
-          </>
-        )}
-      </head>
-      <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 font-sans antialiased">
         <Header />
         <main className="flex-1 pb-16 md:pb-0">{children}</main>
         <Footer />
